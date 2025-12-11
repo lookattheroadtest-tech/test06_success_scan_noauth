@@ -1,36 +1,34 @@
-name: ZAP API Scan (POST Requests Included)
+name: ZAP Simple POST Test (Automation)
 
 on:
   workflow_dispatch:
-  push:
-  pull_request:
 
 jobs:
-  zap-api-scan:
+  zap-post-test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Fix workspace permissions
+      - name: Fix permissions
         run: chmod -R 777 .
 
       - name: Create output folder
-        run: mkdir -p zap-output && chmod 777 zap-output
+        run: mkdir -p zap-output
 
-      - name: Run ZAP API Scan (executes POSTs via OpenAPI)
+      - name: Run ZAP Automation Plan
         run: |
           docker run --rm \
             -v "$(pwd)":/zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable \
-            python3 /zap/zap-api-scan.py \
-              -t "https://demo.testfire.net/swagger/properties.json" \
-              -f openapi \
-              -r /zap/wrk/zap-output/zap-report.html \
-              -J /zap/wrk/zap-output/zap-report.json \
-              -I \
-              -d
+            zap.sh -cmd \
+              -autorun /zap/wrk/zap-automation/plan.yaml
+
+      - name: Copy ZAP report
+        run: |
+          cp ~/.ZAP/report.html zap-output/zap-report.html || true
+          cp ~/.ZAP/report.json zap-output/zap-report.json || true
 
       - name: Upload HTML Report
         uses: actions/upload-artifact@v4
